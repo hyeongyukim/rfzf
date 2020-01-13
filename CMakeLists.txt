@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 17)
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
 
+include_directories(include)
+
 SET(SRC_FILES src/main.cpp
         src/FileEnumerator.h
         src/FileEnumerator.cpp
@@ -17,6 +19,6 @@ SET(SRC_FILES src/main.cpp
         src/Controller.h
         src/Controller.cpp
         src/FuzzEngine.cpp
-        src/RegexEngine.cpp)
+        src/RegexEngine.cpp src/View.h src/View.cpp include/DataType.h)
 
 add_executable(rfzf ${SRC_FILES})

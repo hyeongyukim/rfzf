@@ -1,5 +1,6 @@
 [requires]
 boost/1.71.0@conan/stable
+range-v3/0.10.0@ericniebler/stable
 
 [generators]
 cmake

@@ -6,6 +6,7 @@
 #define RFZF_CONTROLLER_H
 
 #include "IEngine.h"
+#include "DataType.h"
 #include "FileEnumerator.h"
 
 class Controller {
@@ -15,8 +16,14 @@ public:
     void Run();
 
 private:
+
+    void EnumeratorCallback(Chunk chunk);
+
     std::unique_ptr<IEngine> engine_;
     std::unique_ptr<FileEnumerator> fileEnumerator_;
+
+    std::mutex fileMutex_;
+    std::vector<Chunk> fileList_;
 };
 
 #endif //RFZF_CONTROLLER_H
