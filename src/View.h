@@ -7,6 +7,11 @@
 
 #include <string>
 #include <vector>
+#include "DataType.h"
+
+#include <unistd.h> // for STDOUT_FILENO
+#include <termios.h>
+#include <mutex>
 
 class View {
 public:
@@ -14,12 +19,28 @@ public:
 
     ~View();
 
-    void Print(std::vector<std::wstring> &paths);
+    void Print(std::vector<std::wstring> &paths, int a, int b);
 
     void Run();
 
+    void RegisterCallback(t_Notify_View callback);
+
 private:
-    void notify(std::function<void(std::string)> callback);
+    void EnableRawMode() noexcept;
+
+    void DisableRawMode() noexcept;
+
+    void Notify();
+
+    void RestoreCursor();
+
+    struct termios origTermios_;
+    std::mutex drawLock_;
+    std::string inputStr_;
+
+    std::pair<int, int> cursorLoc_;
+
+    std::vector<t_Notify_View> callbacks_;
 };
 
 #endif //RFZF_VIEW_H

@@ -1,13 +1,14 @@
 #include <iostream>
 #include "Controller.h"
 
+/*
 #include <sys/ioctl.h> //ioctl() and TIOCGWINSZ
 #include <unistd.h> // for STDOUT_FILENO
 #include <termios.h>
-#include <ctype.h>
+*/
 
 
-struct termios orig_termios;
+/*
 
 void disableRawMode() {
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
@@ -22,6 +23,7 @@ void enableRawMode() {
     raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
 }
+*/
 
 
 int main() {

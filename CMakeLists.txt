@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.14)
 project(rfzf)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -8,17 +8,27 @@ conan_basic_setup()
 
 include_directories(include)
 
+set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
+
 SET(SRC_FILES src/main.cpp
-        src/FileEnumerator.h
-        src/FileEnumerator.cpp
-        src/IEngine.h
-        src/FuzzEngine.h
-        src/RegexEngine.h
-        src/Task.h
-        src/Task.cpp
+        src/Enumerator/FileEnumerator.h
+        src/Enumerator/FileEnumerator.cpp
+        src/Engine/IEngine.h
+        src/Engine/FuzzEngine.h
+        src/Engine/RegexEngine.h
         src/Controller.h
         src/Controller.cpp
-        src/FuzzEngine.cpp
-        src/RegexEngine.cpp src/View.h src/View.cpp include/DataType.h)
+        src/Engine/FuzzEngine.cpp
+        src/Engine/RegexEngine.cpp
+        src/View.h
+        src/View.cpp
+        include/DataType.h
+        #src/Common/ThreadPool.cpp
+        src/Common/ThreadPool.h
+        #src/Common/JoinThreads.cpp
+        #src/Common/JoinThreads.h
+        #src/Common/ThreadsafeQueue.h
+        #src/Common/ThreadsafeQueue.cpp
+        )
 
 add_executable(rfzf ${SRC_FILES})

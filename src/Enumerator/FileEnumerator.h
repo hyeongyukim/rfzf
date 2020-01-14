@@ -8,6 +8,8 @@
 #include <queue>
 #include <vector>
 #include <mutex>
+#include <atomic>
+#include <boost/asio/thread_pool.hpp>
 
 #include "DataType.h"
 
@@ -22,12 +24,14 @@ public:
 
     void Run();
 
+    uint32_t GetStatics();
+
 private:
     void Notify();
 
-    void Enumerate(std::wstring &&directory);
+    void Enumerate(std::wstring directory);
 
-    static constexpr uint32_t kTaskSize_ = 1000;
+    static constexpr uint32_t kTaskSize_ = 100;
 
     std::wstring rootDirectory_;
     std::queue<std::wstring> directoryQueue_;
@@ -36,6 +40,9 @@ private:
 
     Chunk chunk_;
     std::mutex chunkMutex_;
+    std::atomic<uint32_t> processed_;
+
+    boost::asio::thread_pool pool;
 };
 
 #endif //RFZF_FILEENUMERATOR_H

@@ -4,10 +4,12 @@
 
 #include "FileEnumerator.h"
 #include <iostream>
-#include <range/v3/all.hpp>
+#include <boost/asio.hpp>
 
 FileEnumerator::FileEnumerator(std::wstring rootDirectory)
-        : rootDirectory_(std::move(rootDirectory)) {
+        : rootDirectory_(std::move(rootDirectory)),
+          processed_(0),
+          pool(8) {
     directoryQueue_.push(rootDirectory_);
 }
 
@@ -16,12 +18,19 @@ void FileEnumerator::Run() {
         auto currentDir = directoryQueue_.front();
         directoryQueue_.pop();
         try {
-            Enumerate(std::move(currentDir));
+            boost::asio::post(pool, std::bind(&FileEnumerator::Enumerate, this, std::move(currentDir)));
+            //Enumerate(std::move(currentDir));
         }
         catch (...) {
             //TODO(김현규) : error handling 로직 추가하기
         }
     }
+    Notify();
+    //std::cout << "End!!" << '\n';
+}
+
+uint32_t FileEnumerator::GetStatics() {
+    return processed_;
 }
 
 void FileEnumerator::Notify() {
@@ -38,16 +47,21 @@ void FileEnumerator::RegisterCallback(t_notify notify) {
     callbacks_.push_back(std::move(notify));
 }
 
-void FileEnumerator::Enumerate(std::wstring &&directory) {
-    for (const auto &path : fs::directory_iterator(directory)) {
-        if (std::filesystem::is_directory(path)) {
-            directoryQueue_.push(path.path().wstring());
-        } else {
-            std::lock_guard<std::mutex> lk(chunkMutex_);
-            chunk_.push_back(path.path().wstring());
-            if (chunk_.size() == kTaskSize_) {
-                Notify();
+void FileEnumerator::Enumerate(std::wstring directory) {
+    try {
+        for (const auto &path : fs::directory_iterator(directory)) {
+            if (std::filesystem::is_directory(path)) {
+                boost::asio::post(pool, std::bind(&FileEnumerator::Enumerate, this, path.path().wstring()));
+                //directoryQueue_.push(path.path().wstring());
+            } else {
+                processed_++;
+                std::lock_guard<std::mutex> lk(chunkMutex_);
+                chunk_.push_back(path.path().wstring());
+                if (chunk_.size() == kTaskSize_) {
+                    Notify();
+                }
             }
         }
     }
+    catch (...) {}
 }
