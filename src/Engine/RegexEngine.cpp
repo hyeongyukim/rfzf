@@ -7,7 +7,6 @@
 #include <thread>
 #include <regex>
 #include <mutex>
-#include <boost/asio.hpp>
 
 
 RegexEngine::~RegexEngine() {
@@ -15,27 +14,36 @@ RegexEngine::~RegexEngine() {
 
 void RegexEngine::ProcessChunk(const Chunk chunk) {
     std::wsmatch m;
+    static int i = 0;
+    //std::wcout << L"processed_ " << chunk.size() << str_ << '\n';
     try {
         std::wregex pat(str_);
         for (const auto &path : chunk) {
             processed_++;
-            if (std::regex_search(path, m, pat)) {
-                //std::this_thread::sleep_for(std::chrono::microseconds(100));
+            if (std::regex_match(path, m, pat)) {
+                // regex_match가 성공할 가능성이 크지 않다고 판단하여
+                // 내부에서 잠금
                 std::lock_guard<std::mutex> lk(mutexForWorker_);
                 res_.emplace(std::make_pair(path.size(), path));
-                if (res_.size() > 100)
+                if (res_.size() > 60)
                     res_.pop();
             }
         }
     } catch (...) {
-        std::lock_guard<std::mutex> lk(mutexForWorker_);
-        while (!res_.empty()) {
-            res_.pop();
-        }
+        //std::wcout << "error!" << '\n';
     }
 }
 
-void RegexEngine::Start(std::wstring str, const TaskList *taskList) {
+/*
+ *
+ * .*.h
+ */
+std::unique_ptr<IEngine> RegexEngine::CreateEngine() {
+    return std::make_unique<RegexEngine>(_construct_token{});
+}
+
+void RegexEngine::Start(std::wstring str) {
+    std::lock_guard<std::mutex> lock(mutexForInstance_);
     str_ = std::move(str);
     processed_ = 0;
     running_ = true;
@@ -47,34 +55,12 @@ void RegexEngine::Start(std::wstring str, const TaskList *taskList) {
             res_.pop();
         }
     }
-
-
-    /*
-    while (true)
-    {
-        //std::unique_lock lk(mutexForWorker_);
-
-        cvEvent_.wait(lk, [this, taskList]() {
-            return !running_ || taskList->size() > idx_;
-        });
-        auto a = std::chrono::system_clock::now();
-        std::cout << a.time_since_epoch().count() << "unlocked\n";
-
-        // 엔진이 종료된 경우, 루프를 빠져 나온다.
-        if (!running_) {
-            break;
-        }
-
-        //try {
-            if(idx_ < taskList->size())
-                ProcessChunk((*taskList)[idx_++]);
-        //}
-        //catch(...) {}
-    }
-    */
+    threadPool_.Resume();
 }
 
 void RegexEngine::Stop() {
+    std::lock_guard<std::mutex> lock(mutexForInstance_);
+    threadPool_.Pause();
     running_ = false;
 }
 
@@ -84,20 +70,13 @@ ResultList RegexEngine::GetResult() {
 }
 
 void RegexEngine::Query(Chunk chunk) {
-    //boost::asio::post(pool, std::bind(&RegexEngine::ProcessChunk, this, (std::move(chunk))));
-//	waitingQueue_.push(std::move(chunk));
-    pool2.enqueue(&RegexEngine::ProcessChunk, this, (std::move(chunk)));
+    //std::lock_guard<std::mutex> lock(mutexForInstance_);
+    while (!running_)
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    threadPool_.AddTask(std::bind(&RegexEngine::ProcessChunk, this, chunk));
 }
 
 uint32_t RegexEngine::GetStatics() {
+    std::lock_guard<std::mutex> lock(mutexForInstance_);
     return processed_;
 }
-
-/*
-void RegexEngine::TaskAdded()
-{
-	auto a = std::chrono::system_clock::now();
-	std::cout << a.time_since_epoch().count() << "added\n";
-	cvEvent_.notify_one();
-}
-*/

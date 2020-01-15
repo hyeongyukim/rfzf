@@ -7,7 +7,6 @@
 #include <termios.h>
 #include <sys/ioctl.h> //ioctl() and TIOCGWINSZ
 #include <iostream>
-
 #include <algorithm>
 
 namespace {
@@ -20,6 +19,9 @@ namespace {
     };
     static struct winsize winSize;
 } //unnamed namespace
+
+//#define _SIMPLE
+#ifndef _SIMPLE
 
 void View::EnableRawMode() noexcept {
     tcgetattr(STDIN_FILENO, &origTermios_);
@@ -53,23 +55,22 @@ void View::Print(std::vector<std::wstring> &paths, int a, int b) {
 
     auto pathIter = paths.begin();
     while (cursorY < winSize.ws_row - 2) {
-        if (pathIter == paths.end()) {
-            break;
+        std::wstring printString = L"";
+        if (pathIter != paths.end()) {
+            printString = *(pathIter++);
         }
 
         {
             std::lock_guard lk(drawLock_);
 
             MoveCursor(cursorY, cursorX);
-            std::wstring_view strView = *pathIter;
-            int strSize = std::min(winSize.ws_col, uint16_t(strView.size()));
-            std::wcout << strView.substr(0, strSize);
+            int strSize = std::min(winSize.ws_col, uint16_t(printString.size()));
+            std::wcout << printString.substr(0, strSize);
             for (int i = 0; i < winSize.ws_col - strSize; i++)
                 std::wcout << ' ';
             RestoreCursor();
         }
         cursorY++;
-        pathIter++;
         cursorX = 1;
     }
 
@@ -115,6 +116,48 @@ void View::Run() {
 void View::RestoreCursor() {
     MoveCursor(cursorLoc_.first, cursorLoc_.second);
 }
+
+
+#else
+
+View::View() {
+
+}
+
+View::~View() {
+
+}
+
+void View::Print(std::vector<std::wstring> &paths, int a, int b) {
+    /*
+    std::cout << a << ' ' << b << ' ' << paths.size();
+    if (paths.size() > 0)
+        std::wcout << paths[0];
+    std::cout << '\n';
+     */
+}
+
+void View::Run() {
+    std::string str;
+    while (true) {
+        std::cin >> inputStr_;
+        Notify();
+    }
+}
+
+void View::EnableRawMode() noexcept {
+
+}
+
+void View::DisableRawMode() noexcept {
+
+}
+
+void View::RestoreCursor() {
+
+}
+
+#endif
 
 void View::Notify() {
     for (const auto &callback: callbacks_) {

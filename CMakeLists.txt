@@ -23,12 +23,8 @@ SET(SRC_FILES src/main.cpp
         src/View.h
         src/View.cpp
         include/DataType.h
-        #src/Common/ThreadPool.cpp
+        src/Common/ThreadPool.cpp
         src/Common/ThreadPool.h
-        #src/Common/JoinThreads.cpp
-        #src/Common/JoinThreads.h
-        #src/Common/ThreadsafeQueue.h
-        #src/Common/ThreadsafeQueue.cpp
         )
 
 add_executable(rfzf ${SRC_FILES})

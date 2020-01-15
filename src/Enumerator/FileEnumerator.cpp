@@ -4,12 +4,11 @@
 
 #include "FileEnumerator.h"
 #include <iostream>
-#include <boost/asio.hpp>
+//#include <boost/asio.hpp>
 
 FileEnumerator::FileEnumerator(std::wstring rootDirectory)
         : rootDirectory_(std::move(rootDirectory)),
-          processed_(0),
-          pool(8) {
+          processed_(0) {
     directoryQueue_.push(rootDirectory_);
 }
 
@@ -18,8 +17,8 @@ void FileEnumerator::Run() {
         auto currentDir = directoryQueue_.front();
         directoryQueue_.pop();
         try {
-            boost::asio::post(pool, std::bind(&FileEnumerator::Enumerate, this, std::move(currentDir)));
-            //Enumerate(std::move(currentDir));
+            //boost::asio::post(pool, std::bind(&FileEnumerator::Enumerate, this, std::move(currentDir)));
+            Enumerate(std::move(currentDir));
         }
         catch (...) {
             //TODO(김현규) : error handling 로직 추가하기
@@ -50,9 +49,9 @@ void FileEnumerator::RegisterCallback(t_notify notify) {
 void FileEnumerator::Enumerate(std::wstring directory) {
     try {
         for (const auto &path : fs::directory_iterator(directory)) {
-            if (std::filesystem::is_directory(path)) {
-                boost::asio::post(pool, std::bind(&FileEnumerator::Enumerate, this, path.path().wstring()));
-                //directoryQueue_.push(path.path().wstring());
+            if (fs::is_directory(path)) {
+                //boost::asio::post(pool, std::bind(&FileEnumerator::Enumerate, this, path.path().wstring()));
+                directoryQueue_.push(path.path().wstring());
             } else {
                 processed_++;
                 std::lock_guard<std::mutex> lk(chunkMutex_);
@@ -63,5 +62,6 @@ void FileEnumerator::Enumerate(std::wstring directory) {
             }
         }
     }
-    catch (...) {}
+    catch (...) {
+    }
 }

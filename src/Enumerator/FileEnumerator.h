@@ -9,7 +9,6 @@
 #include <vector>
 #include <mutex>
 #include <atomic>
-#include <boost/asio/thread_pool.hpp>
 
 #include "DataType.h"
 
@@ -42,7 +41,7 @@ private:
     std::mutex chunkMutex_;
     std::atomic<uint32_t> processed_;
 
-    boost::asio::thread_pool pool;
+//    boost::asio::thread_pool pool;
 };
 
 #endif //RFZF_FILEENUMERATOR_H

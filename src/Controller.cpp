@@ -4,8 +4,6 @@
 
 #include "Controller.h"
 #include "Engine/FuzzEngine.h"
-#include "Engine/RegexEngine.h"
-
 #include <iostream>
 #include <future>
 
@@ -16,11 +14,11 @@ namespace {
     }
 } //unnamed namespace
 
-std::wstring test_path = L"/Volumes/";
+std::wstring test_path = L"/Volumes/Workingspace/";
 
 void Controller::Initialize() {
-    engine_ = std::unique_ptr<IEngine>((IEngine *) new RegexEngine);
-    fileEnumerator_ = std::unique_ptr<FileEnumerator>(new FileEnumerator(test_path));
+    engine_ = RegexEngine::CreateEngine();
+    fileEnumerator_ = std::make_unique<FileEnumerator>(test_path);
     taskList_ = std::make_unique<TaskList>();
 }
 
@@ -35,13 +33,16 @@ void Controller::Run() {
             std::placeholders::_1));
 
     std::thread{&FileEnumerator::Run, fileEnumerator_.get()}.detach();
-    std::thread{&IEngine::Start, engine_.get(), L"[A-Z]*.cpp", taskList_.get()}.detach();
+    std::thread{&IEngine::Start, engine_.get(), L".*.cpp"}.detach();
     std::thread{&View::Run, &view_}.detach();
 
     auto start = std::chrono::system_clock::now();
 
     int idx = 0;
     while (1) {
+        //auto printResult = std::async(std::bind(&Controller::PrintScreen, this), std::launch::async);
+        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
         /*
         std::cout << "==================================\n";
         std::cout << idx++ << ": " << engine_->GetStatics() << '/' << fileEnumerator_->GetStatics() << "\n";
@@ -61,46 +62,59 @@ void Controller::Run() {
             strs.push_back(a.top().second);
             a.pop();
         }
-
         view_.Print(strs, engine_->GetStatics(), fileEnumerator_->GetStatics());
+
         /*
-        auto a = engine_->GetResult();
-        if (a.size() > 10) {
-            for (int i = 0; i < 1; i++)
-            {
-                std::wcout << a.top().second << '\n';
-                a.pop();
+        auto result = engine_->GetResult();
+        if (result.size() > 20) {
+            for (int i = 0; i < 10; i++) {
+                std::wcout << result.top().second << '\n';
+                result.pop();
+
             }
         }
-        */
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        /*
-        if (idx == 10) {
+         */
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        if (idx == 20) {
             engine_->Stop();
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        //	std::thread{ &IEngine::Run, engine_.get(), L".*.cpp", taskList_.get() }.detach();
+            std::thread{&IEngine::Start, engine_.get(), L"[^b]*.h"}.detach();;
+
+            for (int i = 0; i < (*taskList_).size(); i++)
+                engine_->Query((*taskList_)[i]);
         }
-        */
+        if (idx == 40) {
+            engine_->Stop();
+            std::thread{&IEngine::Start, engine_.get(), L"[^dfghi]*.cpp"}.detach();;
+
+            for (int i = 0; i < (*taskList_).size(); i++)
+                engine_->Query((*taskList_)[i]);
+        }
     }
-    auto end = std::chrono::system_clock::now();
-    std::chrono::duration<double> diff = end - start;
+    //auto end = std::chrono::system_clock::now();
+    //std::chrono::duration<double> diff = end - start;
     //std::cout << diff.count() << std::endl;
 }
 
 void Controller::EnumeratorCallback(Chunk chunk) {
-    //std::lock_guard lk(fileMutex_);
-    //std::cout << "notify : " << taskList_->size() << ' ' << chunk.size() << '\n';
-    if (engineOn_)
+    if (engineOn_) {
         engine_->Query(chunk);
+    }
     taskList_->push_back(std::move(chunk));
 }
 
 void Controller::ViewCallback(std::string inputStr) {
+    //std::cout << "callback called" << '\n';
     engine_->Stop();
     engineOn_ = false;
-
-    std::thread{&IEngine::Start, engine_.get(), s2ws(inputStr), taskList_.get()}.detach();
+    std::thread{&IEngine::Start, engine_.get(), s2ws(inputStr)}.detach();
     engineOn_ = true;
-    for (const auto &task : *taskList_)
+
+    for (const auto &task : *taskList_) {
         engine_->Query(task);
+    }
+}
+
+bool Controller::PrintScreen() {
+    return true;
 }

@@ -5,31 +5,36 @@
 #ifndef RFZF_REGEXENGINE_H
 #define RFZF_REGEXENGINE_H
 
+#include "../Common/ThreadPool.h"
 #include "IEngine.h"
-#include "DataType.h"
+#include "../../include/DataType.h"
 #include <atomic>
 #include <mutex>
-#include <boost/asio/thread_pool.hpp>
-#include "../Common/ThreadPool.h"
 
-class RegexEngine : IEngine {
+class RegexEngine : public IEngine {
+private:
+    struct _construct_token {
+    };
 public:
+    RegexEngine(_construct_token) : threadPool_(2) {}
+
     ~RegexEngine() override;
 
-    RegexEngine() : pool(6), pool2(6) {}
+    static std::unique_ptr<IEngine> CreateEngine();
 
-    void Start(std::wstring str, const TaskList *taskList) override;
+    void Start(std::wstring str) override;
 
     void Stop() override;
 
-    ResultList GetResult() override;
-
     void Query(Chunk chunk) override;
+
+    ResultList GetResult() override;
 
     uint32_t GetStatics() override;
 
 private:
-    void ProcessChunk(const Chunk chunk);
+
+    void ProcessChunk(Chunk chunk);
 
     ResultList res_;
     std::wstring str_;
@@ -41,8 +46,7 @@ private:
     std::condition_variable cvEvent_;
 
     std::queue<Chunk> waitingQueue_;
-    boost::asio::thread_pool pool;
-    ThreadPool pool2;
+    ThreadPool threadPool_;
 };
 
 #endif //RFZF_REGEXENGINE_H

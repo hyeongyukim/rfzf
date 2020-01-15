@@ -6,6 +6,7 @@
 #define RFZF_VIEW_H
 
 #include <string>
+#include <mutex>
 #include <vector>
 #include "DataType.h"
 
