@@ -42,7 +42,7 @@ private:
     bool engineOn_;
     std::unique_ptr<IEngine> engine_;
     std::unique_ptr<FileEnumerator> fileEnumerator_;
-    std::unique_ptr<TaskList> taskList_;
+    TaskList taskList_;
     View view_;
 
     std::mutex mutexForInterface_;

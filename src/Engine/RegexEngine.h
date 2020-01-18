@@ -26,7 +26,7 @@ public:
 
     void Stop() override;
 
-    void Query(Chunk chunk) override;
+    void Query(Chunk *chunk) override;
 
     ResultList GetResult() override;
 
@@ -34,7 +34,7 @@ public:
 
 private:
 
-    void ProcessChunk(Chunk chunk);
+    void ProcessChunk(Chunk *chunk);
 
     ResultList res_;
     std::wstring str_;

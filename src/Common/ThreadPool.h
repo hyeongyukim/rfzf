@@ -76,7 +76,7 @@ auto ThreadPool::AddTask(F &&function, Args &&... arguments)
 -> std::future<typename std::result_of<F(Args...)>::type> {
     using return_type = typename std::result_of<F(Args...)>::type;
 
-//    std::unique_lock<std::mutex> lock(interfaceMutex_);
+    std::unique_lock<std::mutex> lock(interfaceMutex_);
 
     //! 입력받은 함수와 인자들을 return_type()으로 패키징한다.
     auto task = std::make_shared<std::packaged_task<return_type()> >(

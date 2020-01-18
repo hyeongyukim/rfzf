@@ -14,12 +14,11 @@ namespace {
     }
 } //unnamed namespace
 
-std::wstring test_path = L"/Volumes/Workingspace/";
+std::wstring test_path = L"/Volumes/";
 
 void Controller::Initialize() {
     engine_ = RegexEngine::CreateEngine();
     fileEnumerator_ = std::make_unique<FileEnumerator>(test_path);
-    taskList_ = std::make_unique<TaskList>();
 }
 
 void Controller::Run() {
@@ -76,31 +75,14 @@ void Controller::Run() {
          */
 
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        if (idx == 20) {
-            engine_->Stop();
-            std::thread{&IEngine::Start, engine_.get(), L"[^b]*.h"}.detach();;
-
-            for (int i = 0; i < (*taskList_).size(); i++)
-                engine_->Query((*taskList_)[i]);
-        }
-        if (idx == 40) {
-            engine_->Stop();
-            std::thread{&IEngine::Start, engine_.get(), L"[^dfghi]*.cpp"}.detach();;
-
-            for (int i = 0; i < (*taskList_).size(); i++)
-                engine_->Query((*taskList_)[i]);
-        }
     }
-    //auto end = std::chrono::system_clock::now();
-    //std::chrono::duration<double> diff = end - start;
-    //std::cout << diff.count() << std::endl;
 }
 
 void Controller::EnumeratorCallback(Chunk chunk) {
+    taskList_.emplace_back(std::make_unique<Chunk>(std::move(chunk)));
     if (engineOn_) {
-        engine_->Query(chunk);
+        engine_->Query((*taskList_.rbegin()).get());
     }
-    taskList_->push_back(std::move(chunk));
 }
 
 void Controller::ViewCallback(std::string inputStr) {
@@ -110,8 +92,8 @@ void Controller::ViewCallback(std::string inputStr) {
     std::thread{&IEngine::Start, engine_.get(), s2ws(inputStr)}.detach();
     engineOn_ = true;
 
-    for (const auto &task : *taskList_) {
-        engine_->Query(task);
+    for (const auto &task : taskList_) {
+        engine_->Query(task.get());
     }
 }
 

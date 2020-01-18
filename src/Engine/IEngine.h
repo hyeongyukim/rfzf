@@ -19,7 +19,7 @@ public:
 
     virtual ResultList GetResult() = 0;
 
-    virtual void Query(Chunk chunk) = 0;
+    virtual void Query(Chunk *chunk) = 0;
 
     virtual uint32_t GetStatics() = 0;
 };

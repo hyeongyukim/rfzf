@@ -10,7 +10,7 @@
 #include <queue>
 
 using Chunk = std::vector<std::wstring>;
-using TaskList = std::vector<Chunk>;
+using TaskList = std::vector<std::unique_ptr<Chunk>>;
 using t_notify = std::function<void(Chunk)>;
 using t_Notify_View = std::function<void(std::string)>;
 namespace fs = std::filesystem;

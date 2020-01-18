@@ -12,13 +12,13 @@
 RegexEngine::~RegexEngine() {
 }
 
-void RegexEngine::ProcessChunk(const Chunk chunk) {
+void RegexEngine::ProcessChunk(Chunk *chunk) {
     std::wsmatch m;
     static int i = 0;
     //std::wcout << L"processed_ " << chunk.size() << str_ << '\n';
     try {
         std::wregex pat(str_);
-        for (const auto &path : chunk) {
+        for (const auto &path : *chunk) {
             processed_++;
             if (std::regex_match(path, m, pat)) {
                 // regex_match가 성공할 가능성이 크지 않다고 판단하여
@@ -69,7 +69,7 @@ ResultList RegexEngine::GetResult() {
     return res_;
 }
 
-void RegexEngine::Query(Chunk chunk) {
+void RegexEngine::Query(Chunk *chunk) {
     //std::lock_guard<std::mutex> lock(mutexForInstance_);
     while (!running_)
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
