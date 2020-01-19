@@ -5,63 +5,54 @@
 #include "RegexEngine.h"
 #include <iostream>
 #include <thread>
-#include <regex>
 #include <mutex>
 
 
-RegexEngine::~RegexEngine() {
-}
-
 void RegexEngine::ProcessChunk(Chunk *chunk) {
-    std::wsmatch m;
-    static int i = 0;
-    //std::wcout << L"processed_ " << chunk.size() << str_ << '\n';
-    try {
-        std::wregex pat(str_);
-        for (const auto &path : *chunk) {
-            processed_++;
-            if (std::regex_match(path, m, pat)) {
-                // regex_match가 성공할 가능성이 크지 않다고 판단하여
-                // 내부에서 잠금
-                std::lock_guard<std::mutex> lk(mutexForWorker_);
-                res_.emplace(std::make_pair(path.size(), path));
-                if (res_.size() > 60)
-                    res_.pop();
+    std::wsmatch matcher;
+    for (const auto &string : *chunk) {
+        processed_++;
+        if (std::regex_match(string, matcher, pat_)) {
+            std::lock_guard<std::mutex> lk(mutexForWorker_);
+            res_.emplace(std::make_pair(string.size(), string));
+            if (res_.size() > maxResultListSize_) {
+                res_.pop();
             }
         }
-    } catch (...) {
-        //std::wcout << "error!" << '\n';
     }
 }
 
-/*
- *
- * .*.h
- */
-std::unique_ptr<IEngine> RegexEngine::CreateEngine() {
-    return std::make_unique<RegexEngine>(_construct_token{});
+std::unique_ptr<IEngine> RegexEngine::CreateEngine(int threadNum) {
+    return std::make_unique<RegexEngine>(_construct_token{}, threadNum);
 }
 
-void RegexEngine::Start(std::wstring str) {
+bool RegexEngine::Start(std::wstring str) {
     std::lock_guard<std::mutex> lock(mutexForInstance_);
-    str_ = std::move(str);
     processed_ = 0;
     running_ = true;
-    idx_ = 0;
-
     {
         std::lock_guard<std::mutex> lk(mutexForWorker_);
         while (!res_.empty()) {
             res_.pop();
         }
     }
+
+    try {
+        pat_ = std::wregex(std::move(str));
+    } catch (const std::regex_error &e) {
+        fileLogger_->info(e.what());
+        return false;
+    }
+
     threadPool_.Resume();
+    return true;
 }
 
-void RegexEngine::Stop() {
+bool RegexEngine::Stop() {
     std::lock_guard<std::mutex> lock(mutexForInstance_);
     threadPool_.Pause();
     running_ = false;
+    return true;
 }
 
 ResultList RegexEngine::GetResult() {
@@ -69,14 +60,23 @@ ResultList RegexEngine::GetResult() {
     return res_;
 }
 
-void RegexEngine::Query(Chunk *chunk) {
-    //std::lock_guard<std::mutex> lock(mutexForInstance_);
-    while (!running_)
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+bool RegexEngine::Query(Chunk *chunk) {
+    std::lock_guard<std::mutex> lock(mutexForInstance_);
+    if (!running_) {
+        return false;
+    }
     threadPool_.AddTask(std::bind(&RegexEngine::ProcessChunk, this, chunk));
+    return true;
 }
 
-uint32_t RegexEngine::GetStatics() {
+uint32_t RegexEngine::GetProcessedNum() {
     std::lock_guard<std::mutex> lock(mutexForInstance_);
     return processed_;
+}
+
+RegexEngine::RegexEngine(RegexEngine::_construct_token, int threadNum)
+        : processed_(0),
+          running_(false),
+          threadPool_(threadNum) {
+    fileLogger_ = spdlog::basic_logger_mt("RegexEngineLogger", "Log.txt");
 }

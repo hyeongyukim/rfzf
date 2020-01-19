@@ -7,21 +7,21 @@
 
 #include <queue>
 
-#include "../../include/DataType.h"
+#include "DataType.h"
 
 class IEngine {
 public:
-    virtual ~IEngine() {};
+    virtual ~IEngine() = default;
 
-    virtual void Start(std::wstring str) = 0;
+    virtual bool Start(std::wstring str) = 0;
 
-    virtual void Stop() = 0;
+    virtual bool Stop() = 0;
 
     virtual ResultList GetResult() = 0;
 
-    virtual void Query(Chunk *chunk) = 0;
+    virtual bool Query(Chunk *chunk) = 0;
 
-    virtual uint32_t GetStatics() = 0;
+    virtual uint32_t GetProcessedNum() = 0;
 };
 
 #endif //RFZF_IENGINE_H

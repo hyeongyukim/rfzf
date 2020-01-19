@@ -8,6 +8,8 @@
 #include <sys/ioctl.h> //ioctl() and TIOCGWINSZ
 #include <iostream>
 #include <algorithm>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <boost/format.hpp>
 
 namespace {
     void MoveCursor(int y, int x) noexcept {
@@ -17,7 +19,9 @@ namespace {
 #error not implemented for linux and windows
 #endif
     };
-    static struct winsize winSize;
+    struct winsize winSize;
+
+    std::vector<wchar_t> sign = {'/', '-', '\\', '|'};
 } //unnamed namespace
 
 //#define _SIMPLE
@@ -43,6 +47,7 @@ View::View() {
     system("clear");
     cursorLoc_.first = winSize.ws_row - 1;
     cursorLoc_.second = 1;
+    filelog = spdlog::basic_logger_mt("view logger", "control.txt");
 }
 
 View::~View() {
@@ -50,12 +55,16 @@ View::~View() {
 }
 
 void View::Print(std::vector<std::wstring> &paths, int a, int b) {
-    int cursorY = 1;
+    int cursorY = 0;
     int cursorX = 1;
 
+    std::string strr = (boost::format("print %d %d %d") % a % b % paths.size()).str();
+    filelog->info(strr);
+    filelog->flush();
+
     auto pathIter = paths.begin();
-    while (cursorY < winSize.ws_row - 2) {
-        std::wstring printString = L"";
+    while (cursorY < winSize.ws_row - 3) {
+        std::wstring printString;
         if (pathIter != paths.end()) {
             printString = *(pathIter++);
         }
@@ -63,11 +72,14 @@ void View::Print(std::vector<std::wstring> &paths, int a, int b) {
         {
             std::lock_guard lk(drawLock_);
 
-            MoveCursor(cursorY, cursorX);
             int strSize = std::min(winSize.ws_col, uint16_t(printString.size()));
+
+            MoveCursor(cursorY, cursorX);
             std::wcout << printString.substr(0, strSize);
-            for (int i = 0; i < winSize.ws_col - strSize; i++)
+
+            for (int i = 0; i < winSize.ws_col - strSize; i++) {
                 std::wcout << ' ';
+            }
             RestoreCursor();
         }
         cursorY++;
@@ -77,7 +89,10 @@ void View::Print(std::vector<std::wstring> &paths, int a, int b) {
     {
         std::lock_guard lk(drawLock_);
         MoveCursor(winSize.ws_row - 2, 1);
-        std::wcout << a << "/" << b << "             ";
+        std::wcout << sign[(workingSignIdx++) / 2] << ' ' << a << "/" << b << "             ";
+        if (workingSignIdx == 8) {
+            workingSignIdx = 0;
+        }
         RestoreCursor();
     }
 }

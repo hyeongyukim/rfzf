@@ -13,6 +13,7 @@
 #include <unistd.h> // for STDOUT_FILENO
 #include <termios.h>
 #include <mutex>
+#include <spdlog/logger.h>
 
 class View {
 public:
@@ -42,6 +43,10 @@ private:
     std::pair<int, int> cursorLoc_;
 
     std::vector<t_Notify_View> callbacks_;
+
+    std::shared_ptr<spdlog::logger> filelog;
+
+    int workingSignIdx = 0;
 };
 
 #endif //RFZF_VIEW_H

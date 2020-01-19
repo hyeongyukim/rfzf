@@ -9,7 +9,7 @@
 
 class FuzzEngine : IEngine {
 public:
-    ~FuzzEngine() override;
+    ~FuzzEngine() override = default;
 
 };
 

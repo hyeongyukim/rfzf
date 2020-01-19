@@ -4,6 +4,3 @@
 
 #include "FuzzEngine.h"
 
-FuzzEngine::~FuzzEngine() {
-}
-

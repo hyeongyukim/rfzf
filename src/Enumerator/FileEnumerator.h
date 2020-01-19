@@ -12,12 +12,14 @@
 
 #include "DataType.h"
 
-//! Thread-unsafe
-//! TODO(김현규) : 만약 Enumerate하는 부분이 병목이 된다면, lock-free queue등을 사용해서
-//!               Thread-safe하게 수정하자.
 class FileEnumerator {
+private:
+    struct _construct_token {
+    };
 public:
-    explicit FileEnumerator(std::wstring rootDirectory);
+    explicit FileEnumerator(_construct_token, std::wstring rootDirectory);
+
+    static std::unique_ptr<FileEnumerator> CreateFileEnumerator(std::wstring rootDirectory);
 
     void RegisterCallback(t_notify notify);
 
@@ -33,15 +35,15 @@ private:
     static constexpr uint32_t kTaskSize_ = 100;
 
     std::wstring rootDirectory_;
+
     std::queue<std::wstring> directoryQueue_;
 
     std::vector<t_notify> callbacks_;
 
     Chunk chunk_;
+
     std::mutex chunkMutex_;
     std::atomic<uint32_t> processed_;
-
-//    boost::asio::thread_pool pool;
 };
 
 #endif //RFZF_FILEENUMERATOR_H

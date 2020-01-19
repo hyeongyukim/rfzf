@@ -15,6 +15,9 @@
 #include <stdexcept>
 #include "../../include/DataType.h"
 
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
+
 #ifndef RFZF_THREADPOOL_H
 #define RFZF_THREADPOOL_H
 
@@ -24,7 +27,7 @@
 //! Pause할 수 있는 간단한 형태의 ThreadPool
 class ThreadPool {
 public:
-    ThreadPool(size_t thread);
+    explicit ThreadPool(size_t thread);
 
     ~ThreadPool();
 

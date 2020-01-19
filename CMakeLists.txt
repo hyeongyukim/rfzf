@@ -10,6 +10,10 @@ include_directories(include)
 
 set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
 
+add_subdirectory(extern/spdlog)
+
+find_package(spdlog)
+
 SET(SRC_FILES src/main.cpp
         src/Enumerator/FileEnumerator.h
         src/Enumerator/FileEnumerator.cpp
@@ -28,3 +32,9 @@ SET(SRC_FILES src/main.cpp
         )
 
 add_executable(rfzf ${SRC_FILES})
+
+include_directories(extern/spdlog/include
+        include
+        src)
+
+target_link_libraries(rfzf spdlog)

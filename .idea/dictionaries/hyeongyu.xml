@@ -2,6 +2,8 @@
   <dictionary name="hyeongyu">
     <words>
       <w>conanbuildinfo</w>
+      <w>rfzf</w>
+      <w>spdlog</w>
     </words>
   </dictionary>
 </component>

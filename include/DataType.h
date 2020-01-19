@@ -9,14 +9,16 @@
 #include <filesystem>
 #include <queue>
 
+namespace fs = std::filesystem;
+
 using Chunk = std::vector<std::wstring>;
 using TaskList = std::vector<std::unique_ptr<Chunk>>;
 using t_notify = std::function<void(Chunk)>;
 using t_Notify_View = std::function<void(std::string)>;
-namespace fs = std::filesystem;
+
 using ResultList = std::priority_queue<std::pair<int, std::wstring>,
         std::vector<std::pair<int, std::wstring>>,
-        std::less<std::pair<int, std::wstring>>>;
+        std::less<>>;
 
 struct WinSize {
     uint16_t y, x;
@@ -27,17 +29,9 @@ struct WinSize {
 #endif
 
 //
-#define RFZF_DISALLOW_COPY_AND_ASSIGN(class_name)    \
-class_name(class_name&)                  = delete;  \
+#define RFZF_DISALLOW_COPY_AND_ASSIGN(class_name)     \
+class_name(class_name&)                  = delete;    \
 class_name& operator=(const class_name&) = delete;
 
-//
-/*
-#define RFZF_ADD_TYPE(_FUNC_NAME_, _DERIVED_TYPE_)  \
-virtual void _FUNC_NAME_(_DERIVED_TYPE_* node) { return; }
-*/
-
-//
-//#define __FUNC__ void*
 
 #endif //RFZF_DATATYPE_H

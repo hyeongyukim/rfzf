@@ -6,7 +6,7 @@
 #include <iostream>
 //#include <boost/asio.hpp>
 
-FileEnumerator::FileEnumerator(std::wstring rootDirectory)
+FileEnumerator::FileEnumerator(_construct_token, std::wstring rootDirectory)
         : rootDirectory_(std::move(rootDirectory)),
           processed_(0) {
     directoryQueue_.push(rootDirectory_);
@@ -50,7 +50,6 @@ void FileEnumerator::Enumerate(std::wstring directory) {
     try {
         for (const auto &path : fs::directory_iterator(directory)) {
             if (fs::is_directory(path)) {
-                //boost::asio::post(pool, std::bind(&FileEnumerator::Enumerate, this, path.path().wstring()));
                 directoryQueue_.push(path.path().wstring());
             } else {
                 processed_++;
@@ -64,4 +63,8 @@ void FileEnumerator::Enumerate(std::wstring directory) {
     }
     catch (...) {
     }
+}
+
+std::unique_ptr<FileEnumerator> FileEnumerator::CreateFileEnumerator(std::wstring rootDirectory) {
+    return std::make_unique<FileEnumerator>(_construct_token{}, std::move(rootDirectory));
 }
